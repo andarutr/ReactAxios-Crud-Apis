@@ -1,14 +1,54 @@
 import React, { Component } from 'react';
 import Navbar from './component/Navbar';
 import './App.css';
+import axios from 'axios';
 
 class App extends Component {
   constructor(props){
     super(props);
     this.state = {
-      members: [{},{},{},{}]
+      members: [],
+      first_name: "",
+      last_name: "",
+      buttonDisabled: false
     };
   }
+
+  componentDidMount(){
+    axios.get('https://reqres.in/api/users?page=2')
+    .then(response => {
+      this.setState({ members: response.data.data });
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  }
+
+  inputOnChangeHandler = event => {
+    this.setState({[event.target.name]: event.target.value});
+  }
+
+  onSubmitHandler = event => {
+    console.log('form telah disubmit');
+    event.preventDefault();
+    this.setState({buttonDisabled: true});
+    let payload = {
+      first_name: this.state.first_name,
+      last_name: this.state.last_name
+    }
+    let url = 'https://reqres.in/api/users';
+    axios.post(url, payload)
+      .then(response => {
+        console.log(response);
+        let members = [...this.state.members];
+        members.push(response.data);
+        this.setState({members, buttonDisabled: false, first_name: "", last_name: ""});
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }
+
   render() {
     return (
       <div>
@@ -20,12 +60,12 @@ class App extends Component {
               <h2>Member</h2>
               <div className="row">
               {this.state.members.map((member, index) => 
-                <div className="col-md-6">
+                <div className="col-md-6" key={member.id}>
                   <div className="card" style={{ margin: 10 }}>
                       <div className="card-body">
-                          <h5 className="card-title">ID MEMBER</h5>
-                          <h5 className="card-title">First Name</h5>
-                          <h5 className="card-title">Last Name</h5>
+                          <h5 className="card-title">{member.id}</h5>
+                          <h5 className="card-title">{member.first_name}</h5>
+                          <h5 className="card-title">{member.last_name}</h5>
                           <button className="btn btn-primary">Edit</button>
                           <button className="btn btn-danger">Delete</button>
                       </div>
@@ -36,12 +76,15 @@ class App extends Component {
             </div>
             <div className="col-md-6" style={{ border: "1px solid black" }}>
               <h2>Form</h2>
-              <form>
+              <form onSubmit={this.onSubmitHandler}>
                 <div className="form-group">
                 <label>First Name</label>
                 <input 
                     type="text" 
                     className="form-control"
+                    name="first_name"
+                    value={this.state.first_name}   
+                    onChange={this.inputOnChangeHandler}             
                 />
                 </div>
                 <div className="form-group">
@@ -49,9 +92,12 @@ class App extends Component {
                 <input 
                     type="text" 
                     className="form-control" 
+                    name="last_name"
+                    value={this.state.last_name}  
+                    onChange={this.inputOnChangeHandler} 
                 />
                 </div>
-                <button type="submit" className="btn btn-primary">Submit</button>
+                <button type="submit" className="btn btn-primary" disabled={this.state.buttonDisabled}>Submit</button>
               </form>
             </div>
           </div>
